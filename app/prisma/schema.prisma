@@ -1,0 +1,40 @@
+generator client {
+    provider = "prisma-client-js"
+    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+    output = "/home/ubuntu/everguard_intelligence/app/node_modules/.prisma/client"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model Contact {
+  id          String   @id @default(cuid())
+  name        String
+  email       String
+  phone       String?
+  company     String?
+  message     String
+  service     String?
+  createdAt   DateTime @default(now())
+  status      String   @default("new")
+  
+  @@map("contacts")
+}
+
+model Inquiry {
+  id          String   @id @default(cuid())
+  name        String
+  email       String
+  phone       String?
+  company     String?
+  service     String
+  urgency     String   @default("medium")
+  details     String
+  budget      String?
+  createdAt   DateTime @default(now())
+  status      String   @default("new")
+  
+  @@map("inquiries")
+}
