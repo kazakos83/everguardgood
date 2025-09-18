@@ -12,7 +12,7 @@ export default function Home() {
   return (
     <>
       {/* Hidden Netlify form for bot detection */}
-      <form name="contact" netlify="true" hidden>
+      <form name="contact" data-netlify="true" hidden>
         <input type="text" name="name" />
         <input type="email" name="email" />
         <input type="tel" name="phone" />

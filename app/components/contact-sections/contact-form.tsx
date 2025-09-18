@@ -170,7 +170,7 @@ Phone: ${formData.phone || 'Not provided'}
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Hidden Netlify form for bot detection */}
-              <form name="contact" netlify="true" hidden>
+              <form name="contact" data-netlify="true" hidden>
                 <input type="text" name="name" />
                 <input type="email" name="email" />
                 <input type="tel" name="phone" />
@@ -181,8 +181,9 @@ Phone: ${formData.phone || 'Not provided'}
                 <input type="text" name="budget" />
               </form>
 
-              <form onSubmit={handleSubmit} className="space-y-6" name="contact" method="POST" data-netlify="true">
+              <form onSubmit={handleSubmit} className="space-y-6" name="contact" method="POST" data-netlify="true" data-netlify-honeypot="bot-field">
                 <input type="hidden" name="form-name" value="contact" />
+                <input type="hidden" name="bot-field" />
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
