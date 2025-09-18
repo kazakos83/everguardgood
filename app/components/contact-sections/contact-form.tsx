@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from 'react'
@@ -34,31 +33,135 @@ const ContactForm = () => {
     setIsSubmitting(true)
 
     try {
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+      // Create the email body with all form details
+      const serviceDisplay = {
+        'corporate-intelligence': 'Corporate Intelligence',
+        'insurance-investigations': 'Insurance Investigations',
+        'osint': 'OSINT Services',
+        'skip-tracing': 'Skip Tracing',
+        'surveillance': 'Surveillance',
+        'background-checks': 'Background Checks',
+        'other': 'Other Services'
+      }[formData.service] || 'General Inquiry'
+
+      const urgencyDisplay = {
+        'low': 'Low - Within 2 weeks',
+        'medium': 'Medium - Within 1 week', 
+        'high': 'High - Within 48 hours',
+        'urgent': 'Urgent - Within 24 hours'
+      }[formData.urgency] || 'Medium Priority'
+
+      const budgetDisplay = {
+        'under-5k': 'Under $5,000',
+        '5k-10k': '$5,000 - $10,000',
+        '10k-25k': '$10,000 - $25,000',
+        '25k-50k': '$25,000 - $50,000',
+        'over-50k': 'Over $50,000',
+        'discuss': 'Prefer to discuss'
+      }[formData.budget] || 'Not specified'
+
+      // Generate inquiry ID
+      const inquiryId = `INQ-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
+      // Create detailed email body for Everguard
+      const emailBody = `
+🚨 NEW ${formData.urgency.toUpperCase()} PRIORITY INQUIRY - EVERGUARD INTELLIGENCE
+
+INQUIRY ID: ${inquiryId}
+SUBMITTED: ${new Date().toLocaleString('en-AU')}
+
+═══════════════════════════════════════════════════════════════
+
+📋 CONTACT INFORMATION:
+Name: ${formData.name}
+Email: ${formData.email}
+Phone: ${formData.phone || 'Not provided'}
+Company: ${formData.company || 'Not provided'}
+
+═══════════════════════════════════════════════════════════════
+
+🎯 SERVICE DETAILS:
+Service Required: ${serviceDisplay}
+Urgency Level: ${urgencyDisplay}
+Estimated Budget: ${budgetDisplay}
+
+═══════════════════════════════════════════════════════════════
+
+💬 PROJECT DETAILS:
+${formData.message}
+
+═══════════════════════════════════════════════════════════════
+
+⚡ ACTION REQUIRED:
+${formData.urgency === 'urgent' ? '🔴 URGENT: Respond within 24 hours' : 
+  formData.urgency === 'high' ? '🟡 HIGH PRIORITY: Respond within 48 hours' : 
+  '🟢 Standard response time applies'}
+
+Reply to: ${formData.email}
+Phone: ${formData.phone || 'Not provided'}
+
+This inquiry was submitted through the Everguard Intelligence website contact form.
+      `.trim()
+
+      // Create mailto link for Everguard notification
+      const everguardEmail = 'info@everguardgroup.com.au'
+      const subject = `🚨 New ${formData.urgency.toUpperCase()} Priority Inquiry - ${formData.name}`
+      const mailtoLink = `mailto:${everguardEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`
+
+      // Create client confirmation email
+      const clientEmailBody = `
+Dear ${formData.name},
+
+Thank you for contacting Everguard Intelligence. We have successfully received your inquiry regarding ${serviceDisplay} and will respond ${urgencyDisplay.toLowerCase()}.
+
+Your Inquiry Details:
+- Service: ${serviceDisplay}
+- Priority Level: ${urgencyDisplay}
+- Reference ID: ${inquiryId}
+
+What Happens Next?
+• Our team will review your requirements within 2 hours
+• We'll prepare a detailed proposal and quote
+• One of our senior investigators will contact you directly
+• We'll schedule a confidential consultation at your convenience
+
+Need Immediate Assistance?
+24/7 Emergency Line: 1800-EVERGUARD
+Email: info@everguardgroup.com.au
+
+🔒 Confidentiality Assured: All communications are treated with the strictest confidentiality in accordance with our professional and licensing standards.
+
+Best regards,
+The Everguard Intelligence Team
+Premier Corporate Investigation Services Australia
+      `.trim()
+
+      const clientMailtoLink = `mailto:${formData.email}?subject=${encodeURIComponent('Thank you for contacting Everguard Intelligence')}&body=${encodeURIComponent(clientEmailBody)}`
+
+      // Open both email clients
+      window.open(mailtoLink, '_blank')
+      
+      // Small delay then open client email
+      setTimeout(() => {
+        window.open(clientMailtoLink, '_blank')
+      }, 1000)
+
+      toast.success('Form submitted successfully! Email clients opened for sending notifications.')
+      
+      // Reset form
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        company: '',
+        service: '',
+        urgency: 'medium',
+        message: '',
+        budget: ''
       })
 
-      if (response?.ok) {
-        toast.success('Message sent successfully! We\'ll contact you within 24 hours.')
-        setFormData({
-          name: '',
-          email: '',
-          phone: '',
-          company: '',
-          service: '',
-          urgency: 'medium',
-          message: '',
-          budget: ''
-        })
-      } else {
-        throw new Error('Failed to send message')
-      }
     } catch (error) {
-      toast.error('Failed to send message. Please try again or call us directly.')
+      toast.error('Failed to process form. Please try calling us directly at 1800-EVERGUARD.')
     } finally {
       setIsSubmitting(false)
     }
@@ -217,7 +320,7 @@ const ContactForm = () => {
                     {isSubmitting ? (
                       <>
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                        <span>Sending...</span>
+                        <span>Processing...</span>
                       </>
                     ) : (
                       <>
