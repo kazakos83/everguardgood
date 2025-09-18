@@ -6,32 +6,6 @@
   NODE_VERSION = "18"
   NPM_VERSION = "9"
 
-# Form handling
-[forms]
-  contact = "/contact"
-
-# Form notifications - Everguard will get email notifications
-[[forms.contact.notifications]]
-  type = "email"
-  to = "info@everguardgroup.com.au"
-  subject = "🚨 New Contact Form Submission - Everguard Intelligence"
-  template = """
-New contact form submission received:
-
-Name: {{ name }}
-Email: {{ email }}
-Phone: {{ phone }}
-Company: {{ company }}
-Service: {{ service }}
-Urgency: {{ urgency }}
-Budget: {{ budget }}
-
-Message:
-{{ message }}
-
-Submitted: {{ dateTime }}
-  """
-
 # Handle client-side routing for static export
 [[redirects]]
   from = "/*"

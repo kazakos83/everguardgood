@@ -11,18 +11,6 @@ import Footer from '@/components/footer'
 export default function Home() {
   return (
     <>
-      {/* Hidden Netlify form for bot detection */}
-      <form name="contact" data-netlify="true" hidden>
-        <input type="text" name="name" />
-        <input type="email" name="email" />
-        <input type="tel" name="phone" />
-        <input type="text" name="company" />
-        <input type="text" name="service" />
-        <input type="text" name="urgency" />
-        <textarea name="message"></textarea>
-        <input type="text" name="budget" />
-      </form>
-      
       <Header />
       <main>
         <Hero />
