@@ -33,38 +33,61 @@ const ContactForm = () => {
     setIsSubmitting(true)
 
     try {
-      // Create the email body with all form details
-      const serviceDisplay = {
-        'corporate-intelligence': 'Corporate Intelligence',
-        'insurance-investigations': 'Insurance Investigations',
-        'osint': 'OSINT Services',
-        'skip-tracing': 'Skip Tracing',
-        'surveillance': 'Surveillance',
-        'background-checks': 'Background Checks',
-        'other': 'Other Services'
-      }[formData.service] || 'General Inquiry'
+      // Create FormData for Netlify Forms
+      const netlifyFormData = new FormData()
+      netlifyFormData.append('form-name', 'contact')
+      netlifyFormData.append('name', formData.name)
+      netlifyFormData.append('email', formData.email)
+      netlifyFormData.append('phone', formData.phone)
+      netlifyFormData.append('company', formData.company)
+      netlifyFormData.append('service', formData.service)
+      netlifyFormData.append('urgency', formData.urgency)
+      netlifyFormData.append('message', formData.message)
+      netlifyFormData.append('budget', formData.budget)
 
-      const urgencyDisplay = {
-        'low': 'Low - Within 2 weeks',
-        'medium': 'Medium - Within 1 week', 
-        'high': 'High - Within 48 hours',
-        'urgent': 'Urgent - Within 24 hours'
-      }[formData.urgency] || 'Medium Priority'
+      // Submit to Netlify Forms
+      const response = await fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(netlifyFormData as any).toString()
+      })
 
-      const budgetDisplay = {
-        'under-5k': 'Under $5,000',
-        '5k-10k': '$5,000 - $10,000',
-        '10k-25k': '$10,000 - $25,000',
-        '25k-50k': '$25,000 - $50,000',
-        'over-50k': 'Over $50,000',
-        'discuss': 'Prefer to discuss'
-      }[formData.budget] || 'Not specified'
+      if (response.ok) {
+        toast.success('Message sent successfully! We\'ll contact you within 24 hours.')
+        
+        // Reset form
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          company: '',
+          service: '',
+          urgency: 'medium',
+          message: '',
+          budget: ''
+        })
 
-      // Generate inquiry ID
-      const inquiryId = `INQ-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        // Also create a backup email to Everguard
+        const serviceDisplay = {
+          'corporate-intelligence': 'Corporate Intelligence',
+          'insurance-investigations': 'Insurance Investigations',
+          'osint': 'OSINT Services',
+          'skip-tracing': 'Skip Tracing',
+          'surveillance': 'Surveillance',
+          'background-checks': 'Background Checks',
+          'other': 'Other Services'
+        }[formData.service] || 'General Inquiry'
 
-      // Create detailed email body for Everguard
-      const emailBody = `
+        const urgencyDisplay = {
+          'low': 'Low - Within 2 weeks',
+          'medium': 'Medium - Within 1 week', 
+          'high': 'High - Within 48 hours',
+          'urgent': 'Urgent - Within 24 hours'
+        }[formData.urgency] || 'Medium Priority'
+
+        const inquiryId = `INQ-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
+        const emailBody = `
 🚨 NEW ${formData.urgency.toUpperCase()} PRIORITY INQUIRY - EVERGUARD INTELLIGENCE
 
 INQUIRY ID: ${inquiryId}
@@ -83,7 +106,14 @@ Company: ${formData.company || 'Not provided'}
 🎯 SERVICE DETAILS:
 Service Required: ${serviceDisplay}
 Urgency Level: ${urgencyDisplay}
-Estimated Budget: ${budgetDisplay}
+Estimated Budget: ${formData.budget ? {
+          'under-5k': 'Under $5,000',
+          '5k-10k': '$5,000 - $10,000',
+          '10k-25k': '$10,000 - $25,000',
+          '25k-50k': '$25,000 - $50,000',
+          'over-50k': 'Over $50,000',
+          'discuss': 'Prefer to discuss'
+        }[formData.budget] || 'Not specified' : 'Not specified'}
 
 ═══════════════════════════════════════════════════════════════
 
@@ -99,69 +129,23 @@ ${formData.urgency === 'urgent' ? '🔴 URGENT: Respond within 24 hours' :
 
 Reply to: ${formData.email}
 Phone: ${formData.phone || 'Not provided'}
+        `.trim()
 
-This inquiry was submitted through the Everguard Intelligence website contact form.
-      `.trim()
+        // Create backup mailto link for Everguard
+        const everguardEmail = 'info@everguardgroup.com.au'
+        const subject = `🚨 New ${formData.urgency.toUpperCase()} Priority Inquiry - ${formData.name}`
+        const mailtoLink = `mailto:${everguardEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`
+        
+        // Open email client as backup
+        setTimeout(() => {
+          window.open(mailtoLink, '_blank')
+        }, 1000)
 
-      // Create mailto link for Everguard notification
-      const everguardEmail = 'info@everguardgroup.com.au'
-      const subject = `🚨 New ${formData.urgency.toUpperCase()} Priority Inquiry - ${formData.name}`
-      const mailtoLink = `mailto:${everguardEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`
-
-      // Create client confirmation email
-      const clientEmailBody = `
-Dear ${formData.name},
-
-Thank you for contacting Everguard Intelligence. We have successfully received your inquiry regarding ${serviceDisplay} and will respond ${urgencyDisplay.toLowerCase()}.
-
-Your Inquiry Details:
-- Service: ${serviceDisplay}
-- Priority Level: ${urgencyDisplay}
-- Reference ID: ${inquiryId}
-
-What Happens Next?
-• Our team will review your requirements within 2 hours
-• We'll prepare a detailed proposal and quote
-• One of our senior investigators will contact you directly
-• We'll schedule a confidential consultation at your convenience
-
-Need Immediate Assistance?
-24/7 Emergency Line: 1800-EVERGUARD
-Email: info@everguardgroup.com.au
-
-🔒 Confidentiality Assured: All communications are treated with the strictest confidentiality in accordance with our professional and licensing standards.
-
-Best regards,
-The Everguard Intelligence Team
-Premier Corporate Investigation Services Australia
-      `.trim()
-
-      const clientMailtoLink = `mailto:${formData.email}?subject=${encodeURIComponent('Thank you for contacting Everguard Intelligence')}&body=${encodeURIComponent(clientEmailBody)}`
-
-      // Open both email clients
-      window.open(mailtoLink, '_blank')
-      
-      // Small delay then open client email
-      setTimeout(() => {
-        window.open(clientMailtoLink, '_blank')
-      }, 1000)
-
-      toast.success('Form submitted successfully! Email clients opened for sending notifications.')
-      
-      // Reset form
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        company: '',
-        service: '',
-        urgency: 'medium',
-        message: '',
-        budget: ''
-      })
-
+      } else {
+        throw new Error('Failed to submit form')
+      }
     } catch (error) {
-      toast.error('Failed to process form. Please try calling us directly at 1800-EVERGUARD.')
+      toast.error('Failed to send message. Please try again or call us directly at 1800-EVERGUARD.')
     } finally {
       setIsSubmitting(false)
     }
@@ -185,12 +169,27 @@ Premier Corporate Investigation Services Australia
               </p>
             </CardHeader>
             <CardContent className="space-y-6">
-              <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Hidden Netlify form for bot detection */}
+              <form name="contact" netlify="true" hidden>
+                <input type="text" name="name" />
+                <input type="email" name="email" />
+                <input type="tel" name="phone" />
+                <input type="text" name="company" />
+                <input type="text" name="service" />
+                <input type="text" name="urgency" />
+                <textarea name="message"></textarea>
+                <input type="text" name="budget" />
+              </form>
+
+              <form onSubmit={handleSubmit} className="space-y-6" name="contact" method="POST" data-netlify="true">
+                <input type="hidden" name="form-name" value="contact" />
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name *</Label>
                     <Input
                       id="name"
+                      name="name"
                       type="text"
                       value={formData?.name || ''}
                       onChange={(e) => handleInputChange('name', e?.target?.value || '')}
@@ -202,6 +201,7 @@ Premier Corporate Investigation Services Australia
                     <Label htmlFor="email">Email Address *</Label>
                     <Input
                       id="email"
+                      name="email"
                       type="email"
                       value={formData?.email || ''}
                       onChange={(e) => handleInputChange('email', e?.target?.value || '')}
@@ -216,6 +216,7 @@ Premier Corporate Investigation Services Australia
                     <Label htmlFor="phone">Phone Number</Label>
                     <Input
                       id="phone"
+                      name="phone"
                       type="tel"
                       value={formData?.phone || ''}
                       onChange={(e) => handleInputChange('phone', e?.target?.value || '')}
@@ -226,6 +227,7 @@ Premier Corporate Investigation Services Australia
                     <Label htmlFor="company">Company/Organization</Label>
                     <Input
                       id="company"
+                      name="company"
                       type="text"
                       value={formData?.company || ''}
                       onChange={(e) => handleInputChange('company', e?.target?.value || '')}
@@ -238,7 +240,7 @@ Premier Corporate Investigation Services Australia
                   <div className="space-y-2">
                     <Label htmlFor="service">Service Required</Label>
                     <Select value={formData?.service || ''} onValueChange={(value) => handleInputChange('service', value)}>
-                      <SelectTrigger className="bg-white border-gray-300">
+                      <SelectTrigger className="bg-white border-gray-300" name="service">
                         <SelectValue placeholder="Select a service" />
                       </SelectTrigger>
                       <SelectContent className="select-content bg-white border border-gray-300 shadow-lg z-50">
@@ -251,11 +253,12 @@ Premier Corporate Investigation Services Australia
                         <SelectItem value="other" className="select-item">Other</SelectItem>
                       </SelectContent>
                     </Select>
+                    <input type="hidden" name="service" value={formData.service} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="urgency">Urgency Level</Label>
                     <Select value={formData?.urgency || 'medium'} onValueChange={(value) => handleInputChange('urgency', value)}>
-                      <SelectTrigger className="bg-white border-gray-300">
+                      <SelectTrigger className="bg-white border-gray-300" name="urgency">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="select-content bg-white border border-gray-300 shadow-lg z-50">
@@ -265,13 +268,14 @@ Premier Corporate Investigation Services Australia
                         <SelectItem value="urgent" className="select-item">Urgent - Within 24 hours</SelectItem>
                       </SelectContent>
                     </Select>
+                    <input type="hidden" name="urgency" value={formData.urgency} />
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="budget">Estimated Budget (Optional)</Label>
                   <Select value={formData?.budget || ''} onValueChange={(value) => handleInputChange('budget', value)}>
-                    <SelectTrigger className="bg-white border-gray-300">
+                    <SelectTrigger className="bg-white border-gray-300" name="budget">
                       <SelectValue placeholder="Select budget range" />
                     </SelectTrigger>
                     <SelectContent className="select-content bg-white border border-gray-300 shadow-lg z-50">
@@ -283,12 +287,14 @@ Premier Corporate Investigation Services Australia
                       <SelectItem value="discuss" className="select-item">Prefer to discuss</SelectItem>
                     </SelectContent>
                   </Select>
+                  <input type="hidden" name="budget" value={formData.budget} />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="message">Project Details *</Label>
                   <Textarea
                     id="message"
+                    name="message"
                     rows={5}
                     value={formData?.message || ''}
                     onChange={(e) => handleInputChange('message', e?.target?.value || '')}
@@ -320,7 +326,7 @@ Premier Corporate Investigation Services Australia
                     {isSubmitting ? (
                       <>
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                        <span>Processing...</span>
+                        <span>Sending...</span>
                       </>
                     ) : (
                       <>
